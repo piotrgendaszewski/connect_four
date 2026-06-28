@@ -1,0 +1,103 @@
+﻿namespace ConnectFour.Services;
+
+using ConnectFour.Models;
+
+public class GameEngine
+{
+    public (bool IsWin, List<(int Row, int Col)> WinningCells) CheckWin(GameBoard board, int playerNumber, int lastRow, int lastCol)
+    {
+        var winningCells = new List<(int, int)>();
+
+        // Poziomo
+        int count = 1;
+        for (int c = lastCol - 1; c >= 0 && board.Cells[lastRow, c] == playerNumber; c--)
+            count++;
+        for (int c = lastCol + 1; c < GameBoard.Cols && board.Cells[lastRow, c] == playerNumber; c++)
+            count++;
+
+        if (count >= 4)
+        {
+            for (int c = lastCol; c >= 0 && board.Cells[lastRow, c] == playerNumber; c--)
+                winningCells.Add((lastRow, c));
+            for (int c = lastCol + 1; c < GameBoard.Cols && board.Cells[lastRow, c] == playerNumber; c++)
+                winningCells.Add((lastRow, c));
+            return (true, winningCells);
+        }
+
+        // Pionowo
+        winningCells.Clear();
+        count = 1;
+        for (int r = lastRow - 1; r >= 0 && board.Cells[r, lastCol] == playerNumber; r--)
+            count++;
+        for (int r = lastRow + 1; r < GameBoard.Rows && board.Cells[r, lastCol] == playerNumber; r++)
+            count++;
+
+        if (count >= 4)
+        {
+            for (int r = lastRow; r >= 0 && board.Cells[r, lastCol] == playerNumber; r--)
+                winningCells.Add((r, lastCol));
+            for (int r = lastRow + 1; r < GameBoard.Rows && board.Cells[r, lastCol] == playerNumber; r++)
+                winningCells.Add((r, lastCol));
+            return (true, winningCells);
+        }
+
+        // Ukośnie ?
+        winningCells.Clear();
+        count = 1;
+        for (int r = lastRow - 1, c = lastCol - 1; r >= 0 && c >= 0 && board.Cells[r, c] == playerNumber; r--, c--)
+            count++;
+        for (int r = lastRow + 1, c = lastCol + 1; r < GameBoard.Rows && c < GameBoard.Cols && board.Cells[r, c] == playerNumber; r++, c++)
+            count++;
+
+        if (count >= 4)
+        {
+            for (int r = lastRow, c = lastCol; r >= 0 && c >= 0 && board.Cells[r, c] == playerNumber; r--, c--)
+                winningCells.Add((r, c));
+            for (int r = lastRow + 1, c = lastCol + 1; r < GameBoard.Rows && c < GameBoard.Cols && board.Cells[r, c] == playerNumber; r++, c++)
+                winningCells.Add((r, c));
+            return (true, winningCells);
+        }
+
+        // Ukośnie ?
+        winningCells.Clear();
+        count = 1;
+        for (int r = lastRow - 1, c = lastCol + 1; r >= 0 && c < GameBoard.Cols && board.Cells[r, c] == playerNumber; r--, c++)
+            count++;
+        for (int r = lastRow + 1, c = lastCol - 1; r < GameBoard.Rows && c >= 0 && board.Cells[r, c] == playerNumber; r++, c--)
+            count++;
+
+        if (count >= 4)
+        {
+            for (int r = lastRow, c = lastCol; r >= 0 && c < GameBoard.Cols && board.Cells[r, c] == playerNumber; r--, c++)
+                winningCells.Add((r, c));
+            for (int r = lastRow + 1, c = lastCol - 1; r < GameBoard.Rows && c >= 0 && board.Cells[r, c] == playerNumber; r++, c--)
+                winningCells.Add((r, c));
+            return (true, winningCells);
+        }
+
+        return (false, new List<(int, int)>());
+    }
+
+    public bool CheckDraw(GameBoard board)
+    {
+        for (int c = 0; c < GameBoard.Cols; c++)
+        {
+            if (board.Cells[0, c] == 0)
+                return false;
+        }
+        return true;
+    }
+
+    public int GetColumnHeight(GameBoard board, int col)
+    {
+        int height = 0;
+        for (int r = GameBoard.Rows - 1; r >= 0; r--)
+        {
+            if (board.Cells[r, col] != 0)
+                height++;
+            else
+                break;
+        }
+        return height;
+    }
+}

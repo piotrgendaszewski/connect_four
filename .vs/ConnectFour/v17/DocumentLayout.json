@@ -1,0 +1,194 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\wwwroot\\js\\lobby.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:wwwroot\\js\\lobby.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\services\\roommanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:services\\roommanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\hubs\\gamehub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:hubs\\gamehub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\wwwroot\\js\\game.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:wwwroot\\js\\game.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\controllers\\gamecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:controllers\\gamecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\services\\gameengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:services\\gameengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\models\\gameroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:models\\gameroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|e:\\onedrive - uniwersytet \u0142\u00F3dzki\\programowanie apliakcji asp net\\connect_four\\views\\game\\play.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{36974F59-CBAD-673E-0DAE-40FB81F23A06}|ConnectFour.csproj|solutionrelative:views\\game\\play.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "GameRoom.cs",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Models\\GameRoom.cs",
+              "RelativeDocumentMoniker": "Models\\GameRoom.cs",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Models\\GameRoom.cs",
+              "RelativeToolTip": "Models\\GameRoom.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAIBWwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T22:21:30.5Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAO8AAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-06-28T22:09:43.223Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "GameController.cs",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Controllers\\GameController.cs",
+              "RelativeDocumentMoniker": "Controllers\\GameController.cs",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Controllers\\GameController.cs",
+              "RelativeToolTip": "Controllers\\GameController.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAIBZwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T22:08:53.447Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "lobby.js",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\wwwroot\\js\\lobby.js",
+              "RelativeDocumentMoniker": "wwwroot\\js\\lobby.js",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\wwwroot\\js\\lobby.js",
+              "RelativeToolTip": "wwwroot\\js\\lobby.js",
+              "ViewState": "AgIAAOsAAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-06-28T22:00:22.878Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Play.cshtml",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Views\\Game\\Play.cshtml",
+              "RelativeDocumentMoniker": "Views\\Game\\Play.cshtml",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Views\\Game\\Play.cshtml",
+              "RelativeToolTip": "Views\\Game\\Play.cshtml",
+              "ViewState": "AgIAAKwAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-06-28T22:22:08.35Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "game.js",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\wwwroot\\js\\game.js",
+              "RelativeDocumentMoniker": "wwwroot\\js\\game.js",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\wwwroot\\js\\game.js",
+              "RelativeToolTip": "wwwroot\\js\\game.js",
+              "ViewState": "AgIAAPYAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-06-28T22:07:49.931Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "GameEngine.cs",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Services\\GameEngine.cs",
+              "RelativeDocumentMoniker": "Services\\GameEngine.cs",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Services\\GameEngine.cs",
+              "RelativeToolTip": "Services\\GameEngine.cs",
+              "ViewState": "AgIAAGQAAAAAAAAAAABRwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T22:15:11.012Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Controllers\\HomeController.cs",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Controllers\\HomeController.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T22:14:59.439Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "RoomManager.cs",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Services\\RoomManager.cs",
+              "RelativeDocumentMoniker": "Services\\RoomManager.cs",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Services\\RoomManager.cs",
+              "RelativeToolTip": "Services\\RoomManager.cs",
+              "ViewState": "AgIAAJAAAAAAAAAAAABBwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T22:04:57.817Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GameHub.cs",
+              "DocumentMoniker": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Hubs\\GameHub.cs",
+              "RelativeDocumentMoniker": "Hubs\\GameHub.cs",
+              "ToolTip": "E:\\OneDrive - Uniwersytet \u0141\u00F3dzki\\Programowanie Apliakcji ASP NET\\connect_four\\Hubs\\GameHub.cs",
+              "RelativeToolTip": "Hubs\\GameHub.cs",
+              "ViewState": "AgIAAJEAAAAAAAAAAABBwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T22:05:03.328Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,320 @@
+﻿// Game logic
+let connection;
+let roomId;
+let nick;
+let playerNumber;
+let currentTurn = 1;
+let isMyTurn = false;
+let gameActive = false;
+let board = null;
+let gameEnded = false;
+let rematchRequested = false;
+let rematchRequestTimeout = null;
+
+// Initialize when page loads
+window.addEventListener('load', async () => {
+    const container = document.getElementById('game-container');
+    roomId = container.getAttribute('data-room-id');
+    nick = container.getAttribute('data-nick');
+    playerNumber = parseInt(container.getAttribute('data-player-number'));
+
+    console.log(`Initializing game: roomId=${roomId}, nick=${nick}, playerNumber=${playerNumber}`);
+
+    await initializeBoard();
+    await initializeSignalR();
+});
+
+async function initializeBoard() {
+    const boardDiv = document.getElementById('board');
+    boardDiv.innerHTML = '';
+
+    // Create 7 columns
+    for (let col = 0; col < 7; col++) {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.setAttribute('data-col', col);
+
+        // Create 6 cells per column
+        for (let row = 0; row < 6; row++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.setAttribute('data-row', row);
+            cell.setAttribute('data-col', col);
+            cell.onclick = () => handleCellClick(col);
+
+            column.appendChild(cell);
+        }
+
+        boardDiv.appendChild(column);
+    }
+
+    // Initialize board state (6x7 zeros)
+    board = Array(6).fill(null).map(() => Array(7).fill(0));
+    updateStatusMessage('Oczekiwanie na drugiego gracza...');
+}
+
+async function initializeSignalR() {
+    connection = new signalR.HubConnectionBuilder()
+        .withUrl('/gameHub')
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('PlayerJoined', (payload) => {
+        console.log('PlayerJoined:', payload);
+        document.getElementById('player1Nick').textContent = payload.player1Nick || 'Gracz 1';
+        document.getElementById('player2Nick').textContent = payload.player2Nick || 'Gracz 2';
+
+        if (payload.player2Nick) {
+            updateStatusMessage('Obaj gracze gotowi. Kliknij "Gotowy!" aby rozpocząć.');
+            document.getElementById('readyButton').style.display = 'block';
+            document.getElementById('countdown').style.display = 'block';
+            startCountdown(60);
+        }
+    });
+
+    connection.on('GameStart', (payload) => {
+        console.log('GameStart:', payload);
+        gameActive = true;
+        gameEnded = false;
+        rematchRequested = false;
+        currentTurn = payload.currentTurn;
+        document.getElementById('readyButton').style.display = 'none';
+        document.getElementById('countdown').style.display = 'none';
+        updateStatusMessage(currentTurn === playerNumber ? 'Twoja tura!' : `Czeka gracz ${currentTurn === 1 ? '1' : '2'}`);
+        isMyTurn = (currentTurn === playerNumber);
+    });
+
+    connection.on('MoveResult', (payload) => {
+        console.log('MoveResult:', payload);
+        board = payload.board;
+        updateBoard(payload);
+        currentTurn = payload.nextTurn;
+        isMyTurn = (currentTurn === playerNumber);
+        updateStatusMessage(isMyTurn ? 'Twoja tura!' : `Czeka gracz ${currentTurn === 1 ? '1' : '2'}`);
+    });
+
+    connection.on('GameOver', (payload) => {
+        console.log('GameOver:', payload);
+        gameActive = false;
+        gameEnded = true;
+        clearRematchRequestTimeout();
+        rematchRequested = false;
+        const rematchButton = document.getElementById('rematchButton');
+        rematchButton.disabled = false;
+        rematchButton.textContent = 'Rewanż';
+
+        if (payload.isDraw) {
+            updateStatusMessage('Remis!');
+            showGameOver('Remis!', 'Obaj gracze zagrali bez błędu - gra zakończyła się remisem.');
+        } else {
+            const isWinner = payload.winnerNick === nick;
+            updateStatusMessage(isWinner ? 'Wygrałeś!' : 'Przegrałeś!');
+            showGameOver(
+                isWinner ? 'Zwycięstwo!' : 'Porażka',
+                isWinner ? `Gratuluję! Wygrałeś przeciwko ${payload.winnerNick}` : `Niestety przegrałeś z ${payload.winnerNick}`
+            );
+        }
+
+        // Highlight winning cells if present
+        if (payload.winningCells && payload.winningCells.length > 0) {
+            payload.winningCells.forEach(cell => {
+                const cellDiv = document.querySelector(`[data-row="${cell.row}"][data-col="${cell.col}"]`);
+                if (cellDiv) {
+                    cellDiv.classList.add('winning');
+                }
+            });
+        }
+    });
+
+    connection.on('PlayerLeft', (payload) => {
+        console.log('PlayerLeft:', payload);
+        updateStatusMessage(`Gracz ${payload.nick} opuścił grę!`);
+        clearRematchRequestTimeout();
+        gameActive = false;
+    });
+
+    connection.on('MoveError', (payload) => {
+        console.log('MoveError:', payload);
+        updateStatusMessage(`Błąd: ${payload.message}`);
+        if (gameActive && !gameEnded) {
+            isMyTurn = (currentTurn === playerNumber);
+        }
+        if (rematchRequested) {
+            clearRematchRequestTimeout();
+            rematchRequested = false;
+            const rematchButton = document.getElementById('rematchButton');
+            rematchButton.disabled = false;
+            rematchButton.textContent = 'Rewanż';
+        }
+    });
+
+    connection.on('RematchRequested', (payload) => {
+        console.log('RematchRequested:', payload);
+        if (!gameEnded) {
+            return;
+        }
+
+        const isRequestedByMe = payload.requestedBy === nick;
+        updateStatusMessage(isRequestedByMe
+            ? 'Wysłano prośbę o rewanż. Czekamy na drugiego gracza...'
+            : `${payload.requestedBy} chce rewanżu.`);
+    });
+
+    connection.on('RematchStarted', (payload) => {
+        console.log('RematchStarted:', payload);
+        clearRematchRequestTimeout();
+        board = payload.board;
+        gameActive = true;
+        gameEnded = false;
+        rematchRequested = false;
+        currentTurn = payload.currentTurn;
+        isMyTurn = (currentTurn === playerNumber);
+
+        clearBoardVisuals();
+        document.getElementById('game-over-overlay').classList.remove('show');
+        document.getElementById('rematchButton').disabled = false;
+        document.getElementById('rematchButton').textContent = 'Rewanż';
+        updateStatusMessage(isMyTurn ? 'Rewanż! Twoja tura!' : `Rewanż! Czeka gracz ${currentTurn === 1 ? '1' : '2'}`);
+    });
+
+    connection.on('Ping', (payload) => {
+        console.log('Ping received');
+    });
+
+    connection.onreconnected(async (connectionId) => {
+        console.log('Reconnected:', connectionId);
+        await connection.invoke('JoinRoom', roomId, nick);
+    });
+
+    await connection.start();
+    console.log('SignalR connected');
+
+    // Join the room
+    await connection.invoke('JoinRoom', roomId, nick);
+}
+
+function handleCellClick(col) {
+    if (!gameActive || !isMyTurn || gameEnded) {
+        return;
+    }
+
+    // Disable further clicks until we get response
+    isMyTurn = false;
+    connection.invoke('MakeMove', roomId, col, playerNumber)
+        .catch(err => {
+            console.error('Error making move:', err);
+            isMyTurn = true;
+        });
+}
+
+function updateBoard(payload) {
+    const cell = document.querySelector(`[data-row="${payload.row}"][data-col="${payload.column}"]`);
+    if (!cell) return;
+
+    // Add animation class
+    cell.classList.add('dropping');
+
+    // Add player class
+    if (payload.playerNumber === 1) {
+        cell.classList.add('player1');
+    } else {
+        cell.classList.add('player2');
+    }
+
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        cell.classList.remove('dropping');
+    }, 300);
+}
+
+function updateStatusMessage(text) {
+    document.getElementById('status-message').textContent = text;
+}
+
+function showGameOver(title, message) {
+    const overlay = document.getElementById('game-over-overlay');
+    document.getElementById('gameOverTitle').textContent = title;
+    document.getElementById('gameOverMessage').textContent = message;
+    overlay.classList.add('show');
+}
+
+function requestRematch() {
+    if (!connection || rematchRequested || !gameEnded) {
+        return;
+    }
+
+    rematchRequested = true;
+    clearRematchRequestTimeout();
+    const rematchButton = document.getElementById('rematchButton');
+    rematchButton.disabled = true;
+    rematchButton.textContent = 'Oczekiwanie...';
+
+    rematchRequestTimeout = setTimeout(() => {
+        if (!rematchRequested || !gameEnded) {
+            return;
+        }
+
+        rematchRequested = false;
+        rematchButton.disabled = false;
+        rematchButton.textContent = 'Rewanż';
+        updateStatusMessage('Drugi gracz nie odpowiedział na prośbę o rewanż.');
+    }, 15000);
+
+    connection.invoke('RequestRematch', roomId, nick)
+        .catch(err => {
+            console.error('Error requesting rematch:', err);
+            clearRematchRequestTimeout();
+            rematchRequested = false;
+            rematchButton.disabled = false;
+            rematchButton.textContent = 'Rewanż';
+        });
+}
+
+function clearRematchRequestTimeout() {
+    if (rematchRequestTimeout) {
+        clearTimeout(rematchRequestTimeout);
+        rematchRequestTimeout = null;
+    }
+}
+
+function clearBoardVisuals() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        cell.classList.remove('player1', 'player2', 'winning', 'dropping');
+    });
+}
+
+function signalReady() {
+    connection.invoke('SignalReady', roomId, nick)
+        .catch(err => console.error('Error signaling ready:', err));
+}
+
+let countdownInterval;
+
+function startCountdown(seconds) {
+    let remaining = seconds;
+    const countdownValue = document.getElementById('countdownValue');
+
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    countdownValue.textContent = remaining;
+
+    countdownInterval = setInterval(() => {
+        remaining--;
+        countdownValue.textContent = remaining;
+
+        if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('countdown').style.display = 'none';
+        }
+    }, 1000);
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (connection) {
+        connection.stop();
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+});

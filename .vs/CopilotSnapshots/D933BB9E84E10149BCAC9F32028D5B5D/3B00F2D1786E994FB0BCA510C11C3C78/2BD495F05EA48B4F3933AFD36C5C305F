@@ -1,0 +1,296 @@
+﻿namespace ConnectFour.Services;
+
+using System.Collections.Concurrent;
+using ConnectFour.Models;
+
+public class RoomManager
+{
+    private readonly ConcurrentDictionary<string, GameRoom> _rooms = new();
+    private readonly SemaphoreSlim _roomSemaphore;
+    private readonly ConcurrentDictionary<string, Barrier> _barriers = new();
+    private readonly GameEngine _gameEngine;
+    private readonly ILogger<RoomManager> _logger;
+    private readonly IConfiguration _config;
+
+    public RoomManager(IConfiguration config, GameEngine gameEngine, ILogger<RoomManager> logger)
+    {
+        _config = config;
+        _gameEngine = gameEngine;
+        _logger = logger;
+        int maxRooms = config.GetValue<int>("Game:MaxActiveRooms", 10);
+        _roomSemaphore = new SemaphoreSlim(maxRooms, maxRooms);
+        _logger.LogInformation("RoomManager initialized with max {MaxRooms} active rooms", maxRooms);
+    }
+
+    public async Task<GameRoom> CreateRoomAsync(string nick)
+    {
+        _logger.LogInformation("Attempting to create room for player {Nick}", nick);
+
+        bool acquired = await _roomSemaphore.WaitAsync(TimeSpan.FromSeconds(5));
+        if (!acquired)
+        {
+            _logger.LogWarning("Failed to acquire room semaphore for player {Nick}", nick);
+            throw new InvalidOperationException("Brak wolnych miejsc. Spróbuj ponownie później.");
+        }
+
+        try
+        {
+            var room = new GameRoom
+            {
+                Player1Nick = nick,
+                Player1Ready = false,
+                Status = RoomStatus.Waiting
+            };
+
+            var barrier = new Barrier(2, PostPhaseAction);
+            void PostPhaseAction(Barrier b)
+            {
+                _logger.LogInformation("Barrier passed for room {RoomId}", room.RoomId);
+                if (room.Status == RoomStatus.Ready)
+                {
+                    room.Status = RoomStatus.InProgress;
+                    room.GameStartedAt = DateTime.UtcNow;
+                    _logger.LogInformation("Game started in room {RoomId}", room.RoomId);
+                }
+            }
+
+            _barriers.TryAdd(room.RoomId.ToString(), barrier);
+            _rooms.TryAdd(room.RoomId.ToString(), room);
+
+            _logger.LogInformation("Room {RoomId} created successfully for player {Nick}", room.RoomId, nick);
+            return room;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating room for player {Nick}", nick);
+            _roomSemaphore.Release();
+            throw;
+        }
+    }
+
+    public GameRoom? JoinRoom(string roomId, string nick, string connectionId)
+    {
+        _logger.LogInformation("Player {Nick} attempting to join room {RoomId}", nick, roomId);
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+        {
+            _logger.LogWarning("Room {RoomId} not found", roomId);
+            return null;
+        }
+
+        if (room.Status != RoomStatus.Waiting)
+        {
+            _logger.LogWarning("Room {RoomId} is not in Waiting status", roomId);
+            return null;
+        }
+
+        if (nick == room.Player1Nick)
+        {
+            _logger.LogWarning("Player {Nick} cannot join room {RoomId} - already player 1", nick, roomId);
+            return null;
+        }
+
+        room.Player2Nick = nick;
+        room.Player2ConnectionId = string.IsNullOrWhiteSpace(connectionId) ? null : connectionId;
+        room.Status = RoomStatus.Ready;
+        room.LastActivityAt = DateTime.UtcNow;
+
+        _logger.LogInformation("Player {Nick} joined room {RoomId} as player 2", nick, roomId);
+        return room;
+    }
+
+    public void SetPlayerConnectionId(string roomId, string nick, string connectionId)
+    {
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return;
+
+        if (room.Player1Nick == nick)
+        {
+            room.Player1ConnectionId = connectionId;
+            _logger.LogInformation("Player1 {Nick} connection set for room {RoomId}", nick, roomId);
+        }
+        else if (room.Player2Nick == nick)
+        {
+            room.Player2ConnectionId = connectionId;
+            _logger.LogInformation("Player2 {Nick} connection set for room {RoomId}", nick, roomId);
+        }
+    }
+
+    public async Task<bool> SignalReadyAsync(string roomId, int playerNumber)
+    {
+        _logger.LogInformation("Player {PlayerNumber} signaling ready in room {RoomId}", playerNumber, roomId);
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+        {
+            _logger.LogWarning("Room {RoomId} not found for SignalReady", roomId);
+            return false;
+        }
+
+        if (playerNumber == 1)
+            room.Player1Ready = true;
+        else if (playerNumber == 2)
+            room.Player2Ready = true;
+        else
+            return false;
+
+        if (!room.Player1Ready || !room.Player2Ready)
+        {
+            _logger.LogInformation("Waiting for both players in room {RoomId}. Player1Ready={Player1Ready}, Player2Ready={Player2Ready}", 
+                roomId, room.Player1Ready, room.Player2Ready);
+            return true;
+        }
+
+        if (!_barriers.TryGetValue(roomId, out var barrier))
+        {
+            _logger.LogError("Barrier not found for room {RoomId}", roomId);
+            room.Status = RoomStatus.Finished;
+            return false;
+        }
+
+        try
+        {
+            _logger.LogInformation("Both players ready in room {RoomId}, waiting at barrier", roomId);
+            bool barrierResult = barrier.SignalAndWait(TimeSpan.FromSeconds(
+                _config.GetValue<int>("Game:PlayerReadyTimeoutSeconds", 60)));
+
+            if (!barrierResult)
+            {
+                _logger.LogWarning("Barrier timeout for room {RoomId}", roomId);
+                room.Status = RoomStatus.Finished;
+                return false;
+            }
+
+            _logger.LogInformation("Barrier passed successfully for room {RoomId}", roomId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SignalReady for room {RoomId}", roomId);
+            room.Status = RoomStatus.Finished;
+            return false;
+        }
+    }
+
+    public MoveResult MakeMove(string roomId, int column, int playerNumber)
+    {
+        _logger.LogInformation("Making move in room {RoomId}: column={Column}, player={PlayerNumber}", roomId, column, playerNumber);
+
+        if (!_rooms.TryGetValue(roomId, out var room))
+        {
+            _logger.LogWarning("Room {RoomId} not found for move", roomId);
+            return new MoveResult { Success = false, Error = "Pokój nie znaleziony" };
+        }
+
+        lock (room.BoardLock)
+        {
+            if (room.CurrentTurn != playerNumber)
+            {
+                _logger.LogWarning("Invalid turn in room {RoomId}: expected player {ExpectedPlayer}, got {PlayerNumber}", 
+                    roomId, room.CurrentTurn, playerNumber);
+                return new MoveResult { Success = false, Error = "Nie twoja tura" };
+            }
+
+            if (column < 0 || column >= GameBoard.Cols)
+            {
+                _logger.LogWarning("Invalid column {Column} in room {RoomId}", column, roomId);
+                return new MoveResult { Success = false, Error = "Kolumna poza zakresem" };
+            }
+
+            int row = -1;
+            for (int r = GameBoard.Rows - 1; r >= 0; r--)
+            {
+                if (room.Board.Cells[r, column] == 0)
+                {
+                    row = r;
+                    break;
+                }
+            }
+
+            if (row == -1)
+            {
+                _logger.LogWarning("Column {Column} is full in room {RoomId}", column, roomId);
+                return new MoveResult { Success = false, Error = "Kolumna pełna" };
+            }
+
+            room.Board.Cells[row, column] = playerNumber;
+            _logger.LogInformation("Piece placed at row={Row}, column={Column} for player {PlayerNumber} in room {RoomId}", 
+                row, column, playerNumber, roomId);
+
+            var (isWin, winningCells) = _gameEngine.CheckWin(room.Board, playerNumber, row, column);
+            bool isDraw = false;
+
+            if (isWin)
+            {
+                _logger.LogInformation("Player {PlayerNumber} won in room {RoomId}", playerNumber, roomId);
+                room.Status = RoomStatus.Finished;
+            }
+            else if (_gameEngine.CheckDraw(room.Board))
+            {
+                _logger.LogInformation("Draw detected in room {RoomId}", roomId);
+                isDraw = true;
+                room.Status = RoomStatus.Finished;
+            }
+            else
+            {
+                room.CurrentTurn = room.CurrentTurn == 1 ? 2 : 1;
+            }
+
+            room.LastActivityAt = DateTime.UtcNow;
+
+            return new MoveResult
+            {
+                Success = true,
+                Row = row,
+                Column = column,
+                PlayerNumber = playerNumber,
+                IsWin = isWin,
+                IsDraw = isDraw,
+                WinningCells = winningCells,
+                NextTurn = room.CurrentTurn
+            };
+        }
+    }
+
+    public void RemoveRoom(string roomId)
+    {
+        _logger.LogInformation("Removing room {RoomId}", roomId);
+        _rooms.TryRemove(roomId, out _);
+        _barriers.TryRemove(roomId, out var barrier);
+        barrier?.Dispose();
+        _roomSemaphore.Release();
+        _logger.LogInformation("Room {RoomId} removed", roomId);
+    }
+
+    public IEnumerable<GameRoom> GetAllRooms()
+    {
+        return _rooms.Values;
+    }
+
+    public GameRoom? GetRoom(string roomId)
+    {
+        _rooms.TryGetValue(roomId, out var room);
+        return room;
+    }
+
+    public int CleanupInactiveRooms(TimeSpan timeout)
+    {
+        _logger.LogInformation("Starting cleanup of inactive rooms with timeout {TimeoutSeconds}s", timeout.TotalSeconds);
+        var now = DateTime.UtcNow;
+        var inactiveRooms = _rooms.Where(kvp => 
+            (now - kvp.Value.LastActivityAt) > timeout || kvp.Value.Status == RoomStatus.Finished)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        int removed = 0;
+        foreach (var roomId in inactiveRooms)
+        {
+            RemoveRoom(roomId);
+            removed++;
+        }
+
+        if (removed > 0)
+            _logger.LogInformation("Cleaned up {Count} inactive rooms", removed);
+
+        return removed;
+    }
+}
