@@ -1,3 +1,0 @@
-wwwroot\css\game.css
-wwwroot\js\lobby.js
-wwwroot\js\game.js

@@ -54,7 +54,7 @@ function renderRoomsTable(rooms) {
             <td>${room.player2Nick ? escapeHtml(room.player2Nick) : '-'}</td>
             <td>
                 <span class="room-status ${room.status === 'Waiting' ? 'status-waiting' : 'status-ready'}">
-                    ${room.status === 'Waiting' ? '? Oczekuje' : '? Gotowy'}
+                    ${room.status === 'Waiting' ? 'Oczekuje' : 'Gotowy'}
                 </span>
             </td>
             <td>${new Date(room.createdAt).toLocaleTimeString('pl-PL')}</td>

@@ -3,20 +3,16 @@ namespace ConnectFour.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using ConnectFour.Models;
 using ConnectFour.Services;
-using ConnectFour.Data;
-using Microsoft.EntityFrameworkCore;
 
 public class GameHub : Hub
 {
     private readonly RoomManager _roomManager;
     private readonly ILogger<GameHub> _logger;
-    private readonly IServiceProvider _serviceProvider;
 
-    public GameHub(RoomManager roomManager, ILogger<GameHub> logger, IServiceProvider serviceProvider)
+    public GameHub(RoomManager roomManager, ILogger<GameHub> logger)
     {
         _roomManager = roomManager;
         _logger = logger;
-        _serviceProvider = serviceProvider;
     }
 
     public override async Task OnConnectedAsync()
@@ -60,11 +56,11 @@ public class GameHub : Hub
                 return;
             }
 
-            // Jeśli to gracz 1 reconnecting
-            if (room.Player1Nick == nick && string.IsNullOrEmpty(room.Player1ConnectionId))
+            // Jeśli to gracz 1 (join/reconnect)
+            if (room.Player1Nick == nick)
             {
                 room.Player1ConnectionId = Context.ConnectionId;
-                _logger.LogInformation("Player1 {Nick} reconnected to room {RoomId}", nick, roomId);
+                _logger.LogInformation("Player1 {Nick} connected/reconnected to room {RoomId}", nick, roomId);
             }
             // Jeśli to gracz 2
             else if (room.Player2Nick == null)
@@ -79,10 +75,10 @@ public class GameHub : Hub
                 room = joinedRoom;
                 _logger.LogInformation("Player2 {Nick} joined room {RoomId}", nick, roomId);
             }
-            else if (room.Player2Nick == nick && string.IsNullOrEmpty(room.Player2ConnectionId))
+            else if (room.Player2Nick == nick)
             {
                 room.Player2ConnectionId = Context.ConnectionId;
-                _logger.LogInformation("Player2 {Nick} reconnected to room {RoomId}", nick, roomId);
+                _logger.LogInformation("Player2 {Nick} connected/reconnected to room {RoomId}", nick, roomId);
             }
             else
             {
@@ -92,6 +88,7 @@ public class GameHub : Hub
             }
 
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            room.LastActivityAt = DateTime.UtcNow;
 
             int playerNumber = room.Player1Nick == nick ? 1 : 2;
             await Clients.Group(roomId).SendAsync("PlayerJoined", new 
@@ -219,10 +216,6 @@ public class GameHub : Hub
                 string? winnerNick = result.IsWin ? 
                     (resolvedPlayerNumber == 1 ? room.Player1Nick : room.Player2Nick) : null;
 
-                var player1Nick = room.Player1Nick ?? "Unknown";
-                var player2Nick = room.Player2Nick ?? "Unknown";
-                var gameStartedAt = room.GameStartedAt ?? room.CreatedAt;
-
                 await Clients.Group(roomId).SendAsync("GameOver", new
                 {
                     winnerNick,
@@ -232,8 +225,6 @@ public class GameHub : Hub
 
                 _logger.LogInformation("Game finished in room {RoomId}: winner={Winner}, draw={IsDraw}", 
                     roomId, winnerNick, result.IsDraw);
-
-                _ = Task.Run(async () => await SaveGameRecordAndStatsAsync(player1Nick, player2Nick, gameStartedAt, winnerNick, result.IsDraw));
             }
         }
         catch (Exception ex)
@@ -298,72 +289,6 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in RequestRematch");
             await Clients.Caller.SendAsync("MoveError", new { message = "Błąd podczas rewanżu" });
-        }
-    }
-
-    private async Task SaveGameRecordAndStatsAsync(string player1Nick, string player2Nick, DateTime gameStartedAt, string? winnerNick, bool isDraw)
-    {
-        try
-        {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                var gameRecord = new GameRecord
-                {
-                    Player1Nick = player1Nick,
-                    Player2Nick = player2Nick,
-                    WinnerNick = winnerNick,
-                    DurationSeconds = (int)(DateTime.UtcNow - gameStartedAt).TotalSeconds,
-                    PlayedAt = DateTime.UtcNow
-                };
-
-                db.GameRecords.Add(gameRecord);
-                _logger.LogInformation("Created GameRecord for players {Player1} vs {Player2}", player1Nick, player2Nick);
-
-                // Update or create players
-                var player1 = await db.Players.FirstOrDefaultAsync(p => p.Nick == player1Nick);
-                if (player1 == null)
-                {
-                    player1 = new Player { Nick = player1Nick };
-                    db.Players.Add(player1);
-                    _logger.LogInformation("Created new player {Nick}", player1.Nick);
-                }
-
-                var player2 = await db.Players.FirstOrDefaultAsync(p => p.Nick == player2Nick);
-                if (player2 == null)
-                {
-                    player2 = new Player { Nick = player2Nick };
-                    db.Players.Add(player2);
-                    _logger.LogInformation("Created new player {Nick}", player2.Nick);
-                }
-
-                if (isDraw)
-                {
-                    player1.Draws++;
-                    player2.Draws++;
-                    _logger.LogInformation("Draw recorded for players {Player1} and {Player2}", player1.Nick, player2.Nick);
-                }
-                else if (winnerNick == player1.Nick)
-                {
-                    player1.Wins++;
-                    player2.Losses++;
-                    _logger.LogInformation("Player {Winner} won against {Loser}", player1.Nick, player2.Nick);
-                }
-                else
-                {
-                    player2.Wins++;
-                    player1.Losses++;
-                    _logger.LogInformation("Player {Winner} won against {Loser}", player2.Nick, player1.Nick);
-                }
-
-                await db.SaveChangesAsync();
-                _logger.LogInformation("Game results saved for players {Player1} vs {Player2}", player1Nick, player2Nick);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error saving game record and stats");
         }
     }
 

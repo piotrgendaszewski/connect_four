@@ -140,6 +140,25 @@ async function initializeSignalR() {
         gameActive = false;
     });
 
+    connection.on('RoomClosed', (payload) => {
+        console.log('RoomClosed:', payload);
+        clearRematchRequestTimeout();
+        rematchRequested = false;
+        gameActive = false;
+        gameEnded = true;
+
+        const message = payload?.message || 'Pokój został zamknięty.';
+        updateStatusMessage(message);
+
+        const rematchButton = document.getElementById('rematchButton');
+        if (rematchButton) {
+            rematchButton.disabled = true;
+            rematchButton.textContent = 'Rewanż niedostępny';
+        }
+
+        showGameOver('Pokój zamknięty', message);
+    });
+
     connection.on('MoveError', (payload) => {
         console.log('MoveError:', payload);
         updateStatusMessage(`Błąd: ${payload.message}`);

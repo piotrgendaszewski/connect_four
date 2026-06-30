@@ -1,16 +1,13 @@
 namespace ConnectFour.Services;
 
-using ConnectFour.Data;
-using ConnectFour.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using ConnectFour.Hubs;
+using ConnectFour.Models;
 
 public class BackgroundTaskService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<BackgroundTaskService> _logger;
-    private List<Player>? _rankingCache;
 
     public BackgroundTaskService(IServiceProvider serviceProvider, ILogger<BackgroundTaskService> logger)
     {
@@ -25,7 +22,6 @@ public class BackgroundTaskService : BackgroundService
         var tasks = new List<Task>
         {
             CleanupLoopAsync(stoppingToken),
-            RankingCacheRefreshAsync(stoppingToken),
             WebSocketPingAsync(stoppingToken)
         };
 
@@ -38,7 +34,9 @@ public class BackgroundTaskService : BackgroundService
         {
             var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
             var roomManager = scope.ServiceProvider.GetRequiredService<RoomManager>();
+            var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<GameHub>>();
             int intervalSeconds = config.GetValue<int>("Game:InactiveRoomCleanupIntervalSeconds", 60);
+            var timeout = TimeSpan.FromSeconds(30);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -46,64 +44,40 @@ public class BackgroundTaskService : BackgroundService
                 {
                     await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), stoppingToken);
 
-                    ThreadPool.QueueUserWorkItem(_ =>
+                    var now = DateTime.UtcNow;
+                    var inactiveRooms = roomManager.GetAllRooms()
+                        .Where(r => (now - r.LastActivityAt) > timeout)
+                        .ToList();
+
+                    foreach (var room in inactiveRooms)
                     {
-                        try
-                        {
-                            int removed = roomManager.CleanupInactiveRooms(TimeSpan.FromSeconds(30));
-                            _logger.LogInformation("Cleaned up {Count} inactive rooms", removed);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error during cleanup");
-                        }
-                    });
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in cleanup loop");
-                }
-            }
-        }
-    }
+                        room.Status = RoomStatus.Finished;
+                        var roomId = room.RoomId.ToString();
+                        var activeConnectionIds = new[] { room.Player1ConnectionId, room.Player2ConnectionId }
+                            .Where(id => !string.IsNullOrWhiteSpace(id))
+                            .Distinct()
+                            .ToList();
 
-    private async Task RankingCacheRefreshAsync(CancellationToken stoppingToken)
-    {
-        using (var scope = _serviceProvider.CreateScope())
-        {
-            var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            int intervalSeconds = config.GetValue<int>("Game:RankingCacheRefreshSeconds", 30);
-
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), stoppingToken);
-
-                    await Task.Run(async () =>
-                    {
-                        try
+                        await hubContext.Clients.Group(roomId).SendAsync("RoomClosed", new
                         {
-                            using (var innerScope = _serviceProvider.CreateScope())
+                            message = "Pokój zosta³ zamkniêty z powodu braku aktywnoœci."
+                        }, stoppingToken);
+
+                        if (activeConnectionIds.Count > 0)
+                        {
+                            await hubContext.Clients.Clients(activeConnectionIds).SendAsync("RoomClosed", new
                             {
-                                var db = innerScope.ServiceProvider.GetRequiredService<AppDbContext>();
-                                var ranking = await db.Players
-                                    .OrderByDescending(p => p.Wins)
-                                    .Take(10)
-                                    .ToListAsync(stoppingToken);
-                                _rankingCache = ranking;
-                                _logger.LogInformation("Ranking cache refreshed with {Count} players", ranking.Count);
-                            }
+                                message = "Pokój zosta³ zamkniêty z powodu braku aktywnoœci."
+                            }, stoppingToken);
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error refreshing ranking cache");
-                        }
-                    });
+
+                        roomManager.RemoveRoom(roomId);
+                    }
+
+                    if (inactiveRooms.Count > 0)
+                    {
+                        _logger.LogInformation("Cleaned up {Count} inactive rooms", inactiveRooms.Count);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -111,7 +85,7 @@ public class BackgroundTaskService : BackgroundService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in ranking refresh loop");
+                    _logger.LogError(ex, "Error during cleanup");
                 }
             }
         }
@@ -145,5 +119,4 @@ public class BackgroundTaskService : BackgroundService
         }
     }
 
-    public List<Player>? GetCachedRanking() => _rankingCache;
 }
